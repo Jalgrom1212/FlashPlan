@@ -3,20 +3,31 @@
 import { useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { LoginPage } from "@/components/login-page"
+import { useAuth } from "@/lib/hooks/use-auth"
 
 export default function Home() {
   const router = useRouter()
-
-  // Check if user is logged in
-  // For now, we'll show the login page
-  // TODO: Implement authentication check
-  const isLoggedIn = false
+  const { isAuthenticated, user, isLoading } = useAuth()
 
   useEffect(() => {
-    if (isLoggedIn) {
-      router.push("/explore")
+    if (!isLoading && isAuthenticated && user) {
+      if (user.profileCompleted) {
+        router.push("/explore")
+      } else {
+        router.push("/complete-profile")
+      }
     }
-  }, [isLoggedIn, router])
+  }, [isAuthenticated, user, isLoading, router])
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-accent" />
+      </div>
+    )
+  }
+
+  if (isAuthenticated) return null
 
   return <LoginPage />
 }

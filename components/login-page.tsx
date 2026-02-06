@@ -8,36 +8,42 @@ import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import Image from "next/image"
 import { useState } from "react"
+import { useAuth } from "@/lib/hooks/use-auth"
 
 export function LoginPage() {
   const [isLogin, setIsLogin] = useState(true)
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+  const [errorMsg, setErrorMsg] = useState("")
   const router = useRouter()
+  const { login, register } = useAuth()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
-    await new Promise((resolve) => setTimeout(resolve, 1500))
+    setErrorMsg("")
 
-    localStorage.setItem("userEmail", email)
-
-    setIsLoading(false)
-
-    if (isLogin) {
-      const userData = localStorage.getItem("userData")
-      if (userData) {
-        router.push("/welcome")
+    try {
+      if (isLogin) {
+        const result = await login(email, password)
+        if (result.profileCompleted) {
+          router.push("/welcome")
+        } else {
+          router.push("/complete-profile")
+        }
       } else {
+        await register(email, password)
         router.push("/complete-profile")
       }
-    } else {
-      router.push("/complete-profile")
+    } catch (err) {
+      setErrorMsg(err instanceof Error ? err.message : "Error al procesar la solicitud")
+    } finally {
+      setIsLoading(false)
     }
   }
 
-  const handleSocialLogin = async (provider: string) => {
+  const handleSocialLogin = async (_provider: string) => {
     setIsLoading(true)
     await new Promise((resolve) => setTimeout(resolve, 1000))
     router.push("/welcome")
@@ -53,6 +59,12 @@ export function LoginPage() {
           <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-wider mb-1">FLASHPLAN</h1>
           <p className="text-xs sm:text-sm text-muted-foreground text-center italic">Tu plan perfecto, sin planearlo</p>
         </div>
+
+        {errorMsg && (
+          <div className="mb-4 p-3 rounded-lg bg-destructive/10 border border-destructive/30 text-destructive text-sm text-center">
+            {errorMsg}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-3 mb-5">
           <div>

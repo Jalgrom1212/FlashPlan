@@ -5,74 +5,38 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ArrowLeft, Bell, Clock, MapPin, Heart, MessageCircle, X } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { useState } from "react"
+import { useNotifications } from "@/lib/hooks/use-notifications"
+
+const iconMap: Record<string, typeof Clock> = {
+  plan: Clock,
+  favorite: Heart,
+  reminder: Bell,
+  new: MapPin,
+  social: MessageCircle,
+}
 
 export function NotificationsPage() {
   const router = useRouter()
-  const [notifications, setNotifications] = useState([
-    {
-      id: 1,
-      type: "plan",
-      icon: Clock,
-      title: "¡Plan disponible cerca!",
-      message: "Concierto de Jazz en Café Central - En 45 min",
-      time: "Hace 5 min",
-      read: false,
-    },
-    {
-      id: 2,
-      type: "favorite",
-      icon: Heart,
-      title: "Plan favorito disponible",
-      message: "Tu restaurante favorito La Taverna tiene mesa libre",
-      time: "Hace 20 min",
-      read: false,
-    },
-    {
-      id: 3,
-      type: "reminder",
-      icon: Bell,
-      title: "Recordatorio de plan",
-      message: "Tu plan de Yoga al Atardecer empieza en 2 horas",
-      time: "Hace 1 hora",
-      read: true,
-    },
-    {
-      id: 4,
-      type: "new",
-      icon: MapPin,
-      title: "Nuevos planes en tu zona",
-      message: "3 planes nuevos disponibles en Madrid Centro",
-      time: "Hace 2 horas",
-      read: true,
-    },
-    {
-      id: 5,
-      type: "social",
-      icon: MessageCircle,
-      title: "Plan compartido",
-      message: "María ha compartido un plan contigo",
-      time: "Hace 3 horas",
-      read: true,
-    },
-  ])
+  const {
+    notifications,
+    unreadCount,
+    isLoading,
+    markAsRead,
+    markAllAsRead,
+    deleteNotification,
+  } = useNotifications()
 
-  const handleMarkAsRead = (id: number) => {
-    setNotifications(notifications.map((notif) => (notif.id === id ? { ...notif, read: true } : notif)))
-    console.log("[v0] Notification marked as read:", id)
+  const handleMarkAsRead = (id: string) => {
+    markAsRead(id)
   }
 
-  const handleDelete = (id: number) => {
-    setNotifications(notifications.filter((notif) => notif.id !== id))
-    console.log("[v0] Notification deleted:", id)
+  const handleDelete = (id: string) => {
+    deleteNotification(id)
   }
 
   const handleMarkAllAsRead = () => {
-    setNotifications(notifications.map((notif) => ({ ...notif, read: true })))
-    console.log("[v0] All notifications marked as read")
+    markAllAsRead()
   }
-
-  const unreadCount = notifications.filter((n) => !n.read).length
 
   return (
     <div className="min-h-screen bg-background">
@@ -105,9 +69,11 @@ export function NotificationsPage() {
 
       <div className="container mx-auto px-4 py-6">
         <div className="space-y-3">
-          {notifications.map((notification) => (
+          {notifications.map((notification) => {
+            const IconComponent = iconMap[notification.type] || Bell
+            return (
             <Card
-              key={notification.id}
+              key={notification._id}
               className={`p-4 bg-card border-border transition-all hover:shadow-lg ${
                 !notification.read ? "border-l-4 border-l-accent" : ""
               }`}
@@ -118,7 +84,7 @@ export function NotificationsPage() {
                     !notification.read ? "bg-accent/20" : "bg-muted"
                   }`}
                 >
-                  <notification.icon
+                  <IconComponent
                     className={`w-6 h-6 ${!notification.read ? "text-accent" : "text-muted-foreground"}`}
                   />
                 </div>
@@ -138,16 +104,16 @@ export function NotificationsPage() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleMarkAsRead(notification.id)}
+                        onClick={() => handleMarkAsRead(notification._id)}
                         className="h-auto p-0 text-xs text-accent hover:text-accent"
                       >
-                        Marcar como leída
+                        Marcar como leida
                       </Button>
                     )}
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => handleDelete(notification.id)}
+                      onClick={() => handleDelete(notification._id)}
                       className="h-auto p-0 text-xs text-destructive hover:text-destructive ml-auto"
                     >
                       <X className="w-4 h-4" />
@@ -156,7 +122,7 @@ export function NotificationsPage() {
                 </div>
               </div>
             </Card>
-          ))}
+          )}))}
         </div>
       </div>
     </div>

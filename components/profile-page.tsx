@@ -20,35 +20,27 @@ import {
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { useState, useEffect, useRef } from "react"
+import { useRef } from "react"
+import { useAuth } from "@/lib/hooks/use-auth"
 
 export function ProfilePage() {
   const router = useRouter()
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const [user, setUser] = useState({
-    name: "Usuario FLASHPLAN",
-    nickname: "@flashuser",
-    email: "usuario@flashplan.com",
-    location: "Madrid, España",
-    age: "",
-    avatar: "/placeholder.svg?height=120&width=120",
-    joinedDate: "Enero 2026",
-    totalPlans: 24,
-    upcomingPlans: 3,
-  })
+  const { user: authUser, logout, isLoading } = useAuth()
 
-  useEffect(() => {
-    const storedUserData = localStorage.getItem("userData")
-    if (storedUserData) {
-      const userData = JSON.parse(storedUserData)
-      setUser({
-        ...user,
-        ...userData,
-      })
-    }
-  }, [])
+  const user = {
+    name: authUser?.name || "Usuario FLASHPLAN",
+    nickname: authUser?.nickname || "@flashuser",
+    email: authUser?.email || "usuario@flashplan.com",
+    location: authUser?.location || "Madrid, Espana",
+    age: authUser?.age || "",
+    avatar: authUser?.avatar || "/placeholder.svg?height=120&width=120",
+    joinedDate: authUser?.joinedDate || "Enero 2026",
+    totalPlans: authUser?.totalPlans || 0,
+    upcomingPlans: authUser?.upcomingPlans || 0,
+  }
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
       if (file.size > 5 * 1024 * 1024) {
@@ -57,21 +49,27 @@ export function ProfilePage() {
       }
 
       const reader = new FileReader()
-      reader.onloadend = () => {
+      reader.onloadend = async () => {
         const newAvatar = reader.result as string
-        const updatedUser = { ...user, avatar: newAvatar }
-        setUser(updatedUser)
-        localStorage.setItem("userData", JSON.stringify(updatedUser))
+        await fetch("/api/user/profile", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            firstName: authUser?.firstName || "",
+            lastName: authUser?.lastName || "",
+            location: authUser?.location || "",
+            age: authUser?.age || "",
+            avatar: newAvatar,
+          }),
+        })
       }
       reader.readAsDataURL(file)
     }
   }
 
   const handleLogout = () => {
-    if (confirm("¿Estás seguro de que quieres cerrar sesión?")) {
-      localStorage.removeItem("userData")
-      localStorage.removeItem("userEmail")
-      router.push("/")
+    if (confirm("Estas seguro de que quieres cerrar sesion?")) {
+      logout()
     }
   }
 

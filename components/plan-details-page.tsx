@@ -1,142 +1,31 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ArrowLeft, Clock, MapPin, Users, Heart, Share2, Calendar, ExternalLink } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { usePlan } from "@/lib/hooks/use-plans"
+import { useFavorites } from "@/lib/hooks/use-favorites"
+import { useUserPlans } from "@/lib/hooks/use-user-plans"
 
 interface PlanDetailsProps {
   planId: string
 }
 
-interface Plan {
-  id: string
-  name: string
-  category: string
-  distance: number
-  attendees: number
-  price: number
-  time: string
-  date: string
-  location: string
-  address: string
-  description: string
-  image: string
-  organizer: string
-  capacity: number
-  latitude: number
-  longitude: number
-}
-
-const plansDatabase: Record<string, Plan> = {
-  "1": {
-    id: "1",
-    name: "Concierto Jazz en Vivo",
-    category: "Música",
-    distance: 0.8,
-    attendees: 45,
-    price: 15,
-    time: "19:30",
-    date: "Hoy, 9 de Enero",
-    location: "Jazz Club Central",
-    address: "Calle Mayor 123, Madrid",
-    description:
-      "Disfruta de una velada excepcional con los mejores músicos de jazz de la ciudad. Una experiencia íntima en un ambiente acogedor con cócteles artesanales y buena compañía.",
-    image: "/jazz-concert-live.jpg",
-    organizer: "Jazz Club Central",
-    capacity: 80,
-    latitude: 40.4168,
-    longitude: -3.7038,
-  },
-  "2": {
-    id: "2",
-    name: "Trattoria La Nonna",
-    category: "Gastronomía",
-    distance: 1.2,
-    attendees: 28,
-    price: 25,
-    time: "20:00",
-    date: "Hoy, 9 de Enero",
-    location: "Trattoria La Nonna",
-    address: "Calle de la Luna 45, Madrid",
-    description:
-      "Auténtica cocina italiana con mesas disponibles. Pasta fresca hecha al momento, pizzas artesanales y los mejores vinos italianos en un ambiente familiar.",
-    image: "/italian-restaurant-cozy.jpg",
-    organizer: "Trattoria La Nonna",
-    capacity: 50,
-    latitude: 40.4215,
-    longitude: -3.7095,
-  },
-  "3": {
-    id: "3",
-    name: "Escape Room Espacial",
-    category: "Entretenimiento",
-    distance: 2.5,
-    attendees: 12,
-    price: 20,
-    time: "18:00",
-    date: "Hoy, 9 de Enero",
-    location: "Mystery Box Madrid",
-    address: "Gran Vía 78, Madrid",
-    description:
-      "Vive una aventura intergaláctica resolviendo puzzles y acertijos en nuestra sala temática espacial. Perfecto para grupos de 2-6 personas.",
-    image: "/escape-room-space-theme.jpg",
-    organizer: "Mystery Box Madrid",
-    capacity: 24,
-    latitude: 40.4203,
-    longitude: -3.7058,
-  },
-  "4": {
-    id: "4",
-    name: "Yoga al Atardecer",
-    category: "Bienestar",
-    distance: 1.8,
-    attendees: 35,
-    price: 0,
-    time: "20:30",
-    date: "Hoy, 9 de Enero",
-    location: "Parque del Retiro",
-    address: "Paseo de la Argentina, Madrid",
-    description:
-      "Sesión gratuita de yoga al aire libre con vistas al atardecer. Trae tu esterilla y disfruta de una hora de relajación y conexión con la naturaleza.",
-    image: "/sunset-yoga-park.jpg",
-    organizer: "Yoga Madrid Community",
-    capacity: 60,
-    latitude: 40.4153,
-    longitude: -3.6845,
-  },
-}
-
 export function PlanDetailsPage({ planId }: PlanDetailsProps) {
   const router = useRouter()
-  const [isFavorite, setIsFavorite] = useState(false)
+  const { plan: planDetails, isLoading } = usePlan(planId)
+  const { favoriteIds, toggleFavorite } = useFavorites()
+  const { joinedPlanIds, joinPlan } = useUserPlans()
   const [isJoining, setIsJoining] = useState(false)
-  const [hasJoined, setHasJoined] = useState(false)
 
-  const planDetails = plansDatabase[planId] || plansDatabase["1"]
-
-  useEffect(() => {
-    const myPlans = JSON.parse(localStorage.getItem("flashplan_my_plans") || "[]")
-    const alreadyJoined = myPlans.some((plan: Plan) => plan.id === planId)
-    setHasJoined(alreadyJoined)
-
-    // Check if it's a favorite
-    const favorites = JSON.parse(localStorage.getItem("flashplan_favorites") || "[]")
-    setIsFavorite(favorites.includes(planId))
-  }, [planId])
+  const isFavorite = favoriteIds.includes(planId)
+  const hasJoined = joinedPlanIds.includes(planId)
 
   const handleToggleFavorite = () => {
-    const favorites = JSON.parse(localStorage.getItem("flashplan_favorites") || "[]")
-    let newFavorites
-    if (isFavorite) {
-      newFavorites = favorites.filter((id: string) => id !== planId)
-    } else {
-      newFavorites = [...favorites, planId]
-    }
-    localStorage.setItem("flashplan_favorites", JSON.stringify(newFavorites))
-    setIsFavorite(!isFavorite)
+    toggleFavorite(planId)
   }
 
   const handleShare = async () => {
@@ -157,46 +46,43 @@ export function PlanDetailsPage({ planId }: PlanDetailsProps) {
   }
 
   const handleJoinPlan = async () => {
+    if (hasJoined || !planDetails) return
     setIsJoining(true)
-    await new Promise((resolve) => setTimeout(resolve, 1500))
 
-    // Get current plans from localStorage
-    const myPlans = JSON.parse(localStorage.getItem("flashplan_my_plans") || "[]")
-
-    // Add new plan if not already joined
-    const alreadyJoined = myPlans.some((plan: Plan) => plan.id === planId)
-    if (!alreadyJoined) {
-      const newPlan = {
+    try {
+      await joinPlan({
         id: planDetails.id,
-        title: planDetails.name,
+        name: planDetails.name,
         location: planDetails.location,
         address: planDetails.address,
         distance: `${planDetails.distance} km`,
         time: planDetails.time,
         date: planDetails.date,
         image: planDetails.image,
-        status: "upcoming",
         category: planDetails.category,
         price: planDetails.price,
         latitude: planDetails.latitude,
         longitude: planDetails.longitude,
-        joinedAt: new Date().toISOString(),
-      }
-      myPlans.push(newPlan)
-      localStorage.setItem("flashplan_my_plans", JSON.stringify(myPlans))
+      })
+      alert("Te has unido al plan exitosamente! Puedes verlo en tu perfil.")
+    } catch {
+      alert("Error al unirse al plan. Intenta de nuevo.")
     }
 
-    setHasJoined(true)
     setIsJoining(false)
-
-    setTimeout(() => {
-      alert("¡Te has unido al plan exitosamente! Puedes verlo en tu perfil.")
-    }, 100)
   }
 
   const handleOpenMaps = () => {
     const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${planDetails.latitude},${planDetails.longitude}`
     window.open(mapsUrl, "_blank")
+  }
+
+  if (isLoading || !planDetails) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-accent" />
+      </div>
+    )
   }
 
   return (

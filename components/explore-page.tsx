@@ -7,6 +7,9 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Clock, MapPin, Users, Search, Heart, User, Zap, Crosshair, Check } from "lucide-react"
 import Link from "next/link"
+import { usePlans } from "@/lib/hooks/use-plans"
+import { useFavorites } from "@/lib/hooks/use-favorites"
+import { useUserPlans } from "@/lib/hooks/use-user-plans"
 
 interface Plan {
   id: string
@@ -25,75 +28,15 @@ interface Plan {
   date: string
 }
 
-const plansData = [
-  {
-    id: "1",
-    name: "Concierto Jazz en Vivo",
-    category: "Música",
-    distance: 0.8,
-    attendees: 45,
-    price: 15,
-    time: "19:30",
-    location: "Jazz Club Central",
-    address: "Calle Mayor 123, Madrid",
-    image: "/jazz-concert-live.jpg",
-    latitude: 40.4168,
-    longitude: -3.7038,
-    date: "Hoy, 9 de Enero",
-  },
-  {
-    id: "2",
-    name: "Restaurante Italiano Mesa Libre",
-    category: "Gastronomía",
-    distance: 1.2,
-    attendees: 8,
-    price: 25,
-    time: "20:00",
-    location: "Trattoria Bella",
-    address: "Calle de la Luna 45, Madrid",
-    image: "/italian-restaurant-cozy.jpg",
-    latitude: 40.42,
-    longitude: -3.705,
-    date: "Hoy, 9 de Enero",
-  },
-  {
-    id: "3",
-    name: "Escape Room: Misterio Espacial",
-    category: "Entretenimiento",
-    distance: 2.1,
-    attendees: 12,
-    price: 18,
-    time: "18:45",
-    location: "EscapeX",
-    address: "Gran Vía 78, Madrid",
-    image: "/escape-room-space-theme.jpg",
-    latitude: 40.415,
-    longitude: -3.708,
-    date: "Hoy, 9 de Enero",
-  },
-  {
-    id: "4",
-    name: "Yoga al Atardecer",
-    category: "Bienestar",
-    distance: 0.5,
-    attendees: 20,
-    price: 0,
-    time: "19:00",
-    location: "Parque del Retiro",
-    address: "Paseo de la Argentina, Madrid",
-    image: "/sunset-yoga-park.jpg",
-    latitude: 40.4153,
-    longitude: -3.6844,
-    date: "Hoy, 9 de Enero",
-  },
-]
-
 export function ExplorePage() {
+  const { plans: plansData, isLoading: plansLoading } = usePlans()
+  const { favoriteIds, toggleFavorite } = useFavorites()
+  const { joinedPlanIds, joinPlan } = useUserPlans()
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null)
-  const [favorites, setFavorites] = useState<string[]>([])
-  const [joinedPlans, setJoinedPlans] = useState<string[]>([])
   const [joiningPlan, setJoiningPlan] = useState<string | null>(null)
   const [radarAngle, setRadarAngle] = useState(0)
+  const favorites = favoriteIds; // Declare favorites variable
+  const joinedPlans = joinedPlanIds; // Declare joinedPlans variable
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -102,69 +45,45 @@ export function ExplorePage() {
     return () => clearInterval(interval)
   }, [])
 
-  useEffect(() => {
-    const storedFavorites = localStorage.getItem("flashplan_favorites")
-    if (storedFavorites) {
-      setFavorites(JSON.parse(storedFavorites))
-    }
-    const storedMyPlans = localStorage.getItem("flashplan_my_plans")
-    if (storedMyPlans) {
-      const myPlans = JSON.parse(storedMyPlans)
-      setJoinedPlans(myPlans.map((p: { id: string }) => p.id))
-    }
-  }, [])
-
-  const plans: Plan[] = plansData.map((plan) => ({
+  const plans: Plan[] = (plansData || []).map((plan: Plan) => ({
     ...plan,
-    isFavorite: favorites.includes(plan.id),
+    isFavorite: favoriteIds.includes(plan.id),
   }))
-
-  const toggleFavorite = (planId: string) => {
-    setFavorites((prev) => {
-      const newFavorites = prev.includes(planId) ? prev.filter((id) => id !== planId) : [...prev, planId]
-      localStorage.setItem("flashplan_favorites", JSON.stringify(newFavorites))
-      return newFavorites
-    })
-  }
 
   const handleQuickJoin = async (e: React.MouseEvent, planId: string) => {
     e.preventDefault()
     e.stopPropagation()
 
-    if (joinedPlans.includes(planId)) return
+    if (joinedPlanIds.includes(planId)) return
 
     setJoiningPlan(planId)
 
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-
-    const planData = plansData.find((p) => p.id === planId)
-    if (planData) {
-      const myPlans = JSON.parse(localStorage.getItem("flashplan_my_plans") || "[]")
-      const newPlan = {
-        id: planData.id,
-        title: planData.name,
-        location: planData.location,
-        address: planData.address,
-        distance: `${planData.distance} km`,
-        time: planData.time,
-        date: planData.date,
-        image: planData.image,
-        status: "upcoming",
-        category: planData.category,
-        price: planData.price,
-        latitude: planData.latitude,
-        longitude: planData.longitude,
-        joinedAt: new Date().toISOString(),
+    try {
+      const planData = plansData.find((p: Plan) => p.id === planId)
+      if (planData) {
+        await joinPlan({
+          id: planData.id,
+          name: planData.name,
+          location: planData.location,
+          address: planData.address,
+          distance: `${planData.distance} km`,
+          time: planData.time,
+          date: planData.date,
+          image: planData.image,
+          category: planData.category,
+          price: planData.price,
+          latitude: planData.latitude,
+          longitude: planData.longitude,
+        })
       }
-      myPlans.push(newPlan)
-      localStorage.setItem("flashplan_my_plans", JSON.stringify(myPlans))
-      setJoinedPlans((prev) => [...prev, planId])
+    } catch {
+      // Error already handled
     }
 
     setJoiningPlan(null)
   }
 
-  const favoritePlans = plans.filter((plan) => favorites.includes(plan.id))
+  const favoritePlans = plans.filter((plan) => favoriteIds.includes(plan.id))
 
   const openInGoogleMaps = (plan: Plan) => {
     const url = `https://www.google.com/maps/search/?api=1&query=${plan.latitude},${plan.longitude}`

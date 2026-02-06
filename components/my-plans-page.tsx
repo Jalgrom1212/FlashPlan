@@ -5,58 +5,34 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ArrowLeft, MapPin, Clock, Calendar, X, CheckCircle, ExternalLink } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { useState, useEffect } from "react"
 import Image from "next/image"
-
-interface JoinedPlan {
-  id: string
-  title: string
-  location: string
-  address: string
-  distance: string
-  time: string
-  date: string
-  image: string
-  status: "upcoming" | "completed"
-  category: string
-  price: number
-  latitude: number
-  longitude: number
-  joinedAt: string
-}
+import { useUserPlans } from "@/lib/hooks/use-user-plans"
 
 export function MyPlansPage() {
   const router = useRouter()
-  const [plans, setPlans] = useState<JoinedPlan[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-
-  useEffect(() => {
-    const savedPlans = JSON.parse(localStorage.getItem("flashplan_my_plans") || "[]")
-    setPlans(savedPlans)
-    setIsLoading(false)
-  }, [])
+  const {
+    plans,
+    upcomingPlans,
+    completedPlans,
+    isLoading,
+    cancelPlan,
+    updatePlanStatus,
+  } = useUserPlans()
 
   const handleCancelPlan = (planId: string) => {
-    if (confirm("¿Estás seguro de que quieres cancelar este plan?")) {
-      const updatedPlans = plans.filter((plan) => plan.id !== planId)
-      setPlans(updatedPlans)
-      localStorage.setItem("flashplan_my_plans", JSON.stringify(updatedPlans))
+    if (confirm("Estas seguro de que quieres cancelar este plan?")) {
+      cancelPlan(planId)
     }
   }
 
   const handleCompletePlan = (planId: string) => {
-    const updatedPlans = plans.map((plan) => (plan.id === planId ? { ...plan, status: "completed" as const } : plan))
-    setPlans(updatedPlans)
-    localStorage.setItem("flashplan_my_plans", JSON.stringify(updatedPlans))
+    updatePlanStatus(planId, "completed")
   }
 
   const handleOpenMaps = (latitude: number, longitude: number) => {
     const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`
     window.open(mapsUrl, "_blank")
   }
-
-  const upcomingPlans = plans.filter((plan) => plan.status === "upcoming")
-  const completedPlans = plans.filter((plan) => plan.status === "completed")
 
   if (isLoading) {
     return (
@@ -108,7 +84,7 @@ export function MyPlansPage() {
             <h2 className="text-lg font-bold text-foreground mb-4">Próximos Planes ({upcomingPlans.length})</h2>
             <div className="space-y-4">
               {upcomingPlans.map((plan) => (
-                <Card key={plan.id} className="overflow-hidden bg-card border-border hover:shadow-lg transition-all">
+                <Card key={plan.planId} className="overflow-hidden bg-card border-border hover:shadow-lg transition-all">
                   <div className="flex gap-4 p-4">
                     <div className="relative w-24 h-24 rounded-lg overflow-hidden flex-shrink-0">
                       <Image src={plan.image || "/placeholder.svg"} alt={plan.title} fill className="object-cover" />
@@ -140,7 +116,7 @@ export function MyPlansPage() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handleCompletePlan(plan.id)}
+                          onClick={() => handleCompletePlan(plan.planId)}
                           className="text-accent border-accent hover:bg-accent/10 transition-all"
                         >
                           <CheckCircle className="w-4 h-4 mr-1" />
@@ -149,7 +125,7 @@ export function MyPlansPage() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleCancelPlan(plan.id)}
+                          onClick={() => handleCancelPlan(plan.planId)}
                           className="text-destructive hover:text-destructive hover:bg-destructive/10 transition-all"
                         >
                           <X className="w-4 h-4 mr-1" />
@@ -170,7 +146,7 @@ export function MyPlansPage() {
             <h2 className="text-lg font-bold text-foreground mb-4">Planes Completados ({completedPlans.length})</h2>
             <div className="space-y-4">
               {completedPlans.map((plan) => (
-                <Card key={plan.id} className="overflow-hidden bg-card border-border opacity-75">
+                <Card key={plan.planId} className="overflow-hidden bg-card border-border opacity-75">
                   <div className="flex gap-4 p-4">
                     <div className="relative w-24 h-24 rounded-lg overflow-hidden flex-shrink-0">
                       <Image
@@ -207,7 +183,7 @@ export function MyPlansPage() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleCancelPlan(plan.id)}
+                        onClick={() => handleCancelPlan(plan.planId)}
                         className="mt-2 text-destructive hover:text-destructive hover:bg-destructive/10 transition-all"
                       >
                         <X className="w-4 h-4 mr-1" />

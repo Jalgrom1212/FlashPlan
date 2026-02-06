@@ -10,9 +10,11 @@ import { Card } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { ArrowRight, User, MapPin, Calendar, Upload, X } from "lucide-react"
 import Image from "next/image"
+import { useAuth } from "@/lib/hooks/use-auth"
 
 export function CompleteProfilePage() {
   const router = useRouter()
+  const { user, mutate } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
   const [profileImage, setProfileImage] = useState<string | null>(null)
   const [formData, setFormData] = useState({
@@ -63,28 +65,34 @@ export function CompleteProfilePage() {
     }
 
     setIsLoading(true)
-    await new Promise((resolve) => setTimeout(resolve, 1500))
 
-    const userData = {
-      name: `${formData.firstName} ${formData.lastName}`,
-      firstName: formData.firstName,
-      lastName: formData.lastName,
-      location: formData.location,
-      age: formData.age,
-      email: localStorage.getItem("userEmail") || "usuario@flashplan.com",
-      nickname: `@${formData.firstName.toLowerCase()}${Math.floor(Math.random() * 1000)}`,
-      joinedDate: new Date().toLocaleDateString("es-ES", { month: "long", year: "numeric" }),
-      totalPlans: 0,
-      upcomingPlans: 0,
-      avatar: profileImage || "/placeholder.svg?height=120&width=120",
+    try {
+      const res = await fetch("/api/user/profile", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          location: formData.location,
+          age: formData.age,
+          avatar: profileImage || "",
+        }),
+      })
+
+      if (!res.ok) {
+        const data = await res.json()
+        alert(data.error || "Error al guardar el perfil")
+        setIsLoading(false)
+        return
+      }
+
+      await mutate()
+      setIsLoading(false)
+      router.push("/welcome")
+    } catch {
+      alert("Error de conexion. Intenta de nuevo.")
+      setIsLoading(false)
     }
-
-    localStorage.setItem("userData", JSON.stringify(userData))
-
-    console.log("[v0] User profile completed:", userData)
-
-    setIsLoading(false)
-    router.push("/welcome")
   }
 
   return (

@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { ArrowLeft, Search, SlidersHorizontal, Clock, MapPin, Users } from "lucide-react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import { usePlans } from "@/lib/hooks/use-plans"
 
 export function SearchPage() {
   const router = useRouter()
@@ -17,6 +18,14 @@ export function SearchPage() {
   const [selectedTimeOfDay, setSelectedTimeOfDay] = useState<string[]>([])
   const [isSearching, setIsSearching] = useState(false)
   const [hasSearched, setHasSearched] = useState(false)
+  const [searchFilters, setSearchFilters] = useState<{
+    category?: string
+    search?: string
+    maxDistance?: string
+  }>({})
+  const { plans: searchResults, isLoading: resultsLoading } = usePlans(
+    hasSearched ? searchFilters : undefined
+  )
 
   const categories = ["Música", "Gastronomía", "Entretenimiento", "Bienestar", "Arte", "Deportes", "Networking"]
 
@@ -52,12 +61,10 @@ export function SearchPage() {
 
   const handleSearch = async () => {
     setIsSearching(true)
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-    console.log("Search with filters:", {
-      searchQuery,
-      selectedCategories,
-      selectedDistance,
-      selectedTimeOfDay,
+    setSearchFilters({
+      search: searchQuery || undefined,
+      category: selectedCategories.length > 0 ? selectedCategories.join(",") : undefined,
+      maxDistance: selectedDistance,
     })
     setHasSearched(true)
     setIsSearching(false)
@@ -213,34 +220,42 @@ export function SearchPage() {
         {/* Results Preview */}
         {hasSearched && (
           <div>
-            <h2 className="text-lg font-bold text-foreground mb-4">Resultados de búsqueda</h2>
+            <h2 className="text-lg font-bold text-foreground mb-4">
+              Resultados de busqueda ({searchResults.length})
+            </h2>
             <div className="space-y-4">
-              {/* Mock result */}
-              <Link href="/plan/1">
-                <Card className="p-4 bg-card border-border hover:shadow-lg transition-all cursor-pointer hover:scale-[1.01] active:scale-[0.99]">
-                  <div className="flex gap-4">
-                    <img src="/jazz-concert-live.jpg" alt="Plan" className="w-24 h-24 rounded-lg object-cover" />
-                    <div className="flex-1">
-                      <Badge className="bg-accent text-accent-foreground mb-2">Música</Badge>
-                      <h3 className="font-bold text-foreground mb-2">Concierto Jazz en Vivo</h3>
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        <div className="flex items-center gap-1">
-                          <Clock className="w-4 h-4 text-accent" />
-                          <span>19:30</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <MapPin className="w-4 h-4 text-accent" />
-                          <span>0.8 km</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Users className="w-4 h-4 text-accent" />
-                          <span>45</span>
+              {searchResults.length === 0 && !resultsLoading && (
+                <Card className="p-8 bg-card border-border text-center">
+                  <p className="text-muted-foreground">No se encontraron planes con estos filtros</p>
+                </Card>
+              )}
+              {searchResults.map((plan: { id: string; image: string; name: string; category: string; time: string; distance: number; attendees: number }) => (
+                <Link key={plan.id} href={`/plan/${plan.id}`}>
+                  <Card className="p-4 bg-card border-border hover:shadow-lg transition-all cursor-pointer hover:scale-[1.01] active:scale-[0.99]">
+                    <div className="flex gap-4">
+                      <img src={plan.image || "/placeholder.svg"} alt={plan.name} className="w-24 h-24 rounded-lg object-cover" />
+                      <div className="flex-1">
+                        <Badge className="bg-accent text-accent-foreground mb-2">{plan.category}</Badge>
+                        <h3 className="font-bold text-foreground mb-2">{plan.name}</h3>
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                          <div className="flex items-center gap-1">
+                            <Clock className="w-4 h-4 text-accent" />
+                            <span>{plan.time}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <MapPin className="w-4 h-4 text-accent" />
+                            <span>{plan.distance} km</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Users className="w-4 h-4 text-accent" />
+                            <span>{plan.attendees}</span>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                </Card>
-              </Link>
+                  </Card>
+                </Link>
+              ))}
             </div>
           </div>
         )}

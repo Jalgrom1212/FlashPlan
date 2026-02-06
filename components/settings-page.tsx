@@ -8,11 +8,13 @@ import { useRouter } from "next/navigation"
 import { useState, useEffect } from "react"
 import { useTranslation, languages, type Language } from "@/lib/i18n"
 import { useTheme } from "@/lib/theme-context"
+import { useAuth } from "@/lib/hooks/use-auth"
 
 export function SettingsPage() {
   const router = useRouter()
   const { t, language, setLanguage } = useTranslation()
   const { theme, setTheme } = useTheme()
+  const { user } = useAuth()
 
   const [settings, setSettings] = useState({
     notifications: true,
@@ -25,16 +27,31 @@ export function SettingsPage() {
   const [showLanguageSelector, setShowLanguageSelector] = useState(false)
 
   useEffect(() => {
-    const savedSettings = localStorage.getItem("appSettings")
-    if (savedSettings) {
-      setSettings(JSON.parse(savedSettings))
+    if (user?.settings) {
+      setSettings({
+        notifications: user.settings.notifications ?? true,
+        locationServices: user.settings.locationServices ?? true,
+        emailUpdates: user.settings.emailUpdates ?? false,
+        showDistance: user.settings.showDistance ?? true,
+        autoRefresh: user.settings.autoRefresh ?? true,
+      })
     }
-  }, [])
+  }, [user])
 
   const handleToggle = (key: keyof typeof settings) => {
     setSettings((prev) => {
       const newSettings = { ...prev, [key]: !prev[key] }
-      localStorage.setItem("appSettings", JSON.stringify(newSettings))
+      fetch("/api/user/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          settings: {
+            ...newSettings,
+            theme,
+            language,
+          },
+        }),
+      })
       return newSettings
     })
   }

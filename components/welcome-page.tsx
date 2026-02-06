@@ -6,17 +6,17 @@ import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import Image from "next/image"
 import { Sparkles, ArrowRight } from "lucide-react"
+import { useAuth } from "@/lib/hooks/use-auth"
 
 export function WelcomePage() {
   const router = useRouter()
+  const { user } = useAuth()
   const [userName, setUserName] = useState("Usuario")
   const [isVisible, setIsVisible] = useState(false)
 
   useEffect(() => {
-    const userData = localStorage.getItem("userData")
-    if (userData) {
-      const user = JSON.parse(userData)
-      setUserName(user.firstName || "Usuario")
+    if (user?.firstName) {
+      setUserName(user.firstName)
     }
 
     setTimeout(() => setIsVisible(true), 100)
@@ -26,7 +26,7 @@ export function WelcomePage() {
     }, 3000)
 
     return () => clearTimeout(timer)
-  }, [router])
+  }, [router, user])
 
   const handleContinue = () => {
     router.push("/explore")

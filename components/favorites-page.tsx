@@ -1,12 +1,12 @@
 "use client"
 
-import { useState } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ArrowLeft, Heart, Share2, Clock, MapPin, Users } from "lucide-react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import { useFavorites } from "@/lib/hooks/use-favorites"
 
 interface FavoritePlan {
   id: string
@@ -22,35 +22,11 @@ interface FavoritePlan {
 
 export function FavoritesPage() {
   const router = useRouter()
-  const [favorites, setFavorites] = useState<FavoritePlan[]>([
-    {
-      id: "2",
-      name: "Restaurante Italiano Mesa Libre",
-      category: "Gastronomía",
-      distance: 1.2,
-      attendees: 8,
-      price: 25,
-      time: "20:00",
-      location: "Trattoria Bella",
-      image: "/italian-restaurant-cozy.jpg",
-    },
-    {
-      id: "4",
-      name: "Yoga al Atardecer",
-      category: "Bienestar",
-      distance: 0.5,
-      attendees: 20,
-      price: 0,
-      time: "19:00",
-      location: "Parque del Retiro",
-      image: "/sunset-yoga-park.jpg",
-    },
-  ])
+  const { favoritePlans: favorites, toggleFavorite, isLoading } = useFavorites()
 
   const removeFavorite = (planId: string) => {
-    if (confirm("¿Eliminar este plan de favoritos?")) {
-      setFavorites((prev) => prev.filter((plan) => plan.id !== planId))
-      console.log("Removed from favorites:", planId)
+    if (confirm("Eliminar este plan de favoritos?")) {
+      toggleFavorite(planId)
     }
   }
 
