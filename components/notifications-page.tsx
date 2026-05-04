@@ -122,9 +122,10 @@ export function NotificationsPage() {
                 </div>
               </div>
             </Card>
-          )}))}
-        </div>
+          )
+        })}
       </div>
     </div>
-  )
+  </div>
+ )
 }
