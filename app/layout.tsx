@@ -42,7 +42,7 @@ export default function RootLayout({
       <body className={`${orbitron.variable} font-sans antialiased scroll-smooth scrollbar-hide overscroll-none`}> 
         {/* fixed global logo */}
         <div className="fixed top-2 left-2 z-50">
-          <img src="public/images/flashplan-logo.png" alt="FlashPlan logo" className="w-10 h-10" />
+          <img src="/images/flashplan-logo.png" alt="FlashPlan logo" className="w-10 h-10" />
         </div>
         <ThemeProvider>{children}</ThemeProvider>
         <Analytics />
