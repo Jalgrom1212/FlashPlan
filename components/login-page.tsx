@@ -52,7 +52,7 @@ export function LoginPage() {
       <Card className="w-full max-w-sm p-6 sm:p-8 bg-card/95 backdrop-blur-sm border-primary/30 shadow-2xl">
         <div className="flex flex-col items-center mb-6">
           <div className="relative w-20 h-20 sm:w-28 sm:h-28 mb-3">
-            <Image src="/images/flashplan.png" alt="FLASHPLAN Logo" fill className="object-contain" priority />
+            <Image src="/images/flashplan-logo.png" alt="FLASHPLAN Logo" fill className="object-contain" priority />
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-wider mb-1">FLASHPLAN</h1>
           <p className="text-xs sm:text-sm text-muted-foreground text-center italic">Tu plan perfecto, sin planearlo</p>
