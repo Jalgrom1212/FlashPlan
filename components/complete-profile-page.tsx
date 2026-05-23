@@ -100,7 +100,7 @@ export function CompleteProfilePage() {
       <Card className="w-full max-w-md p-8 bg-card/95 backdrop-blur-sm border-primary/30">
         <div className="flex flex-col items-center mb-6">
           <div className="relative w-20 h-20 mb-4">
-            <Image src="/images/flashplan.png" alt="FLASHPLAN Logo" fill className="object-contain" />
+            <Image src="/images/flashplan-logo.png" alt="FLASHPLAN Logo" fill className="object-contain" />
           </div>
           <h1 className="text-2xl font-bold text-foreground tracking-wider mb-2">Completa tu perfil</h1>
           <p className="text-sm text-muted-foreground text-center">

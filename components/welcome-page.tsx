@@ -47,7 +47,7 @@ export function WelcomePage() {
       >
         <div className="flex flex-col items-center mb-6">
           <div className="relative w-16 h-16 sm:w-20 sm:h-20 mb-4 animate-bounce">
-            <Image src="/images/flashplan.png" alt="FLASHPLAN Logo" fill className="object-contain" />
+            <Image src="/images/flashplan-logo.png" alt="FLASHPLAN Logo" fill className="object-contain" />
           </div>
 
           <div className="flex items-center gap-2 mb-3 flex-wrap justify-center">
