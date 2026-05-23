@@ -256,5 +256,5 @@ export function PlanDetailsPage({ planId }: PlanDetailsProps) {
         </div>
       </div>
     </div>
-  )
+  ) 
 }
